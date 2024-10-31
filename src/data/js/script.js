@@ -27,6 +27,10 @@ function is_num(number) {
 
 var $this;
 
+function qqq(){
+	// ...
+}
+
 class JV {
 	constructor() {
 		$this = this;
@@ -75,6 +79,11 @@ class JV {
 			} else {
 				// else push to tabs list
 				$this.tabs.push(request.sender.tab.id);
+
+				chrome.scripting.executeScript({
+					target: { tabId: request.sender.tab.id },
+					func: qqq
+				});
 			}
 			
 			return true;

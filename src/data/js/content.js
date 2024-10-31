@@ -92,7 +92,7 @@ function getData(path, key, collection, level) {
 					if (typeof collection[path[level]] === 'boolean') {
 						collection[path[level]] = collection[path[level]].toString();
 					}
-					
+
 					var checkLevel = level;
 					if (collection[path[level]] == path[++checkLevel]) {
 						return path[++checkLevel];
@@ -120,7 +120,7 @@ function getData(path, key, collection, level) {
 				collection = collection[path[level]];
 		}
 	}
-	
+
 	return getData(path, key, collection, ++level);
 }
 
@@ -136,6 +136,7 @@ class JV {
 			user: {},
 			init: false
 		};
+
 		this.lists = {
 			posts: {},
 			unlock: [],
@@ -225,18 +226,23 @@ class JV {
 	}
 	userHandler() {
 		$('#submenu').append('<span data-action="options" class="big_button" title="Настройки"></span>');
+		$('.secondary-menu > div > div.flex > div.flex')
+			.append('<a href="#" data-action="options"><button type="button" class="ant-btn css-il4ovg ant-btn-round ant-btn-link secondary-menu-element">Настройки</button></a>');
+
 		// login, logout - reset token
-		$(document).on('click', '#logout, input[value="Войти"]', function() {
+		$(document).on('click', '#logout, input[value="Войти"], button:has(span[aria-label="logout"]), button:contains("Вход")', function () {x
 			engine.runtime.sendMessage({method: 'token', action: 'del'});
 		});
 
 		// tag subscribe/unsubscribe/block - clear user data
 		$(document).on('click', '.change_favorite_link', function() {
+			debugger; // TODO			
 			engine.runtime.sendMessage({action: 'user', data: 'del'});
 		});
 
 		// tag subscribe/unsubscribe/block. only for censored tags
 		$(document).on('click', '[data-tag_id]', function() {
+			debugger; // TODO			
 			$this.tag.state($(this).attr('data-tag_id'), $(this).parent().attr('class'));
 		});
 
@@ -247,6 +253,8 @@ class JV {
 					return false;
 				// check all posts
 				for (const [post_id, item] of Object.entries($this.lists.posts)) {
+					console.log('TODO: scroll'); // TODO			
+
 					// if the block is fully visible on screen				
 					if ((item.offset().top + item.height()) < ($(window).height() + $(window).scrollTop()) && !(post_id in $this.lists.viewed)) {
 						// да, это ебучий костыль, что бы оно не срало 10 запросов за один скролл
@@ -265,9 +273,11 @@ class JV {
 				}
 			});
 		}
+
 		// mark post as visited when click link/vote
 		// if this is download button - load all post content
 		$(document).on('click', '.postContainer a, .postContainer .vote-plus, .postContainer .vote-minus, .postContainer [data-action]', function() {
+			debugger; // TODO			
 			const post_id = $(this).parents('.postContainer').attr('id').match(/([0-9]+)$/)[1];
 			if ($(this).attr('data-action') == 'download') {
 				$this.download($(this));
@@ -277,9 +287,11 @@ class JV {
 				delete $this.lists.posts[post_id];
 			}
 		});
-		$(document).on('click', '#submenu > [data-action]', function() {
-			switch($(this).attr('data-action')) {
+
+		$(document).on('click', '#submenu > [data-action], .secondary-menu [data-action]', function() {
+			switch ($(this).attr('data-action')) {
 				case 'download':
+					debugger; // TODO					
 					$('.postContainer [data-action="download"]').each(function() {
 						$(this).click();
 					});
@@ -288,17 +300,20 @@ class JV {
 					engine.runtime.sendMessage({method: 'options', action: 'page'});
 					break;
 			}
-
 		});
+
 		// return to default when clicking on a post
 		$(document).on('click', '.postContainer', function() {
+			debugger; // TODO			
 			if ($(this).hasClass('JV_title')) {
 				$(this).removeClass('JV_title');
 				$(this).css('opacity', 1);
 			}
 		});
+
 		// get comments list
 		$(document).on('click', '.JV_toggleComments', async function(event) {
+			debugger; // TODO			
 			event.preventDefault();
 
 			const post_id = $(this).parents('.postContainer').attr('id').match(/([0-9]+)$/)[1];
@@ -313,12 +328,16 @@ class JV {
 				return true;
 			}			
 		});
+
 		// send comment
 		$(document).on('click', '.JV_submit', function() {
+			debugger; // TODO			
 			$this.comments.add(new FormData($(this).parent('form')[0]))
 		});
+
 		// shortcut download
 		$(document).on('keydown', function(event) {
+			console.log('TODO: keydown'); // TODO			
 			// Ctrl + Shift + S
 			if (event.keyCode == 83 && event.ctrlKey && event.shiftKey) {
 				let target;
@@ -511,7 +530,7 @@ class JV {
 						if (ex.includes(tmp[i]))
 							tmp.splice(i, 1);
 					}
-					
+
 					if (tmp.at(0) < pages.at(-3))
 						data.pagination.expanded.push(dots);
 
@@ -551,7 +570,7 @@ class JV {
 				// show pagination
 				$('#Pagination').remove();
 				$('#contentinner').append($('#JV_pagination').Container([data]));
-				
+
 				// tag header image
 				$('#contentInnerHeader').on('load', function() {
 					$(this).removeAttr('style');
@@ -573,7 +592,7 @@ class JV {
 						state = 'UNSUBSCRIBED';
 						break;
 				}
-				
+
 				engine.runtime.sendMessage({method: 'tag', action: 'state', data: {tag_id: tag_id, state: state}});
 				return true;
 			}
@@ -588,33 +607,54 @@ class JV {
 
 				let fandomOrTag = false;
 				const subdomain = window.location.hostname.match(/^(.*?)\.reactor.*/);
+
 				if (subdomain) {
 					if (!['old', 'joy'].includes(subdomain[1]))
 						fandomOrTag = true;
 					if (subdomain[1] == 'old')
 						old = 'old';
 				}
-				if ($this.url[1] == 'tag')
+
+				if ($this.url[1] == 'tag' || window.location.pathname.includes('/tag/'))
 					fandomOrTag = true;
 
 				// if quick download enabled - make button
-				if ($this.vars.options.download_status)
-					item.find('.share_buttons').prepend(`<span data-action="download" class="big_button ${old}" title="Скачать все картинки из поста"></span>`);
+				if ($this.vars.options.download_status){
+					item.find('.share_buttons')
+						.prepend(`<span data-action="download" class="big_button ${old}" title="Скачать все картинки из поста"></span>`);
+					$('.post-footer > div:has(span[aria-label="link"])')
+						  // .prepend('<a href="#" data-action="download"><button type="button" class="ant-btn css-il4ovg ant-btn-round ant-btn-link secondary-menu-element">Скачать все картинки из поста</button></a>');
+						  .prepend('<a href="#">'
+							+ '<button type="button" data-action="download" class="ant-btn css-il4ovg ant-btn-default ant-btn-icon-only ant-btn-background-ghost post-menu-button xl:block">'
+							+ '<span class="ant-btn-icon">'
+							+ '<span role="img" aria-label="download" class="anticon anticon-save pt-0.5">'
+							// + '<svg viewBox="64 64 896 896" focusable="false" data-icon="link" width="1em" height="1em" fill="currentColor" aria-hidden="true">'
+							// + '<path d="M574 665.4a8.03 8.03 0 00-11.3 0L446.5 781.6c-53.8 53.8-144.6 59.5-204 0-59.5-59.5-53.8-150.2 0-204l116.2-116.2c3.1-3.1 3.1-8.2 0-11.3l-39.8-39.8a8.03 8.03 0 00-11.3 0L191.4 526.5c-84.6 84.6-84.6 221.5 0 306s221.5 84.6 306 0l116.2-116.2c3.1-3.1 3.1-8.2 0-11.3L574 665.4zm258.6-474c-84.6-84.6-221.5-84.6-306 0L410.3 307.6a8.03 8.03 0 000 11.3l39.7 39.7c3.1 3.1 8.2 3.1 11.3 0l116.2-116.2c53.8-53.8 144.6-59.5 204 0 59.5 59.5 53.8 150.2 0 204L665.3 562.6a8.03 8.03 0 000 11.3l39.8 39.8c3.1 3.1 8.2 3.1 11.3 0l116.2-116.2c84.5-84.6 84.5-221.5 0-306.1zM610.1 372.3a8.03 8.03 0 00-11.3 0L372.3 598.7a8.03 8.03 0 000 11.3l39.6 39.6c3.1 3.1 8.2 3.1 11.3 0l226.4-226.4c3.1-3.1 3.1-8.2 0-11.3l-39.5-39.6z">'
+							// + '</path>'
+							// + '</svg>'
+							+ '</span>'
+							+ '</span>'
+							+ '</button>'
+							+ '</a>')
+				}
 
-				if ($this.vars.options.post_share_disabled)
+				if ($this.vars.options.post_share_disabled){
 					item.find('.share_buttons > a[class^="share"]').remove();
-
+				}
 
 				// default without exceptions
 				let exceptions = [];
+
 				// allow exceptions on all pages
 				if ($this.vars.options.tags_exceptions_page == 'all') {
 					exceptions = Object.values($this.vars.options.tags_list);
 				}
+
 				// exceptions only on tags/fandoms
 				if ($this.vars.options.tags_exceptions_page == 'tag' && fandomOrTag) {
 					exceptions = Object.values($this.vars.options.tags_list);
 				}
+
 				// exceptions not in tags/fandoms
 				if ($this.vars.options.tags_exceptions_page == 'notag' && !fandomOrTag) {
 					exceptions = Object.values($this.vars.options.tags_list);
@@ -627,7 +667,7 @@ class JV {
 				if ($this.vars.options.post_tags_mark) {
 					for (const tag of tags) {
 						const id = parseInt($(tag).attr('data-ids').split(',')[0]);
-						
+
 						if ($this.vars.user.tags.subscribed.includes(id))
 							$(tag).addClass('subscribed');
 						if ($this.vars.user.tags.blocked.includes(id))
@@ -646,11 +686,11 @@ class JV {
 					}
 				}
 
-
 				// disable if post action on tag page, but this is non tag/fandom page
 				if ($this.vars.options.post_pages_action == 'tag' && !fandomOrTag) {
 					return {post_id: post_id, check: false};
 				}
+
 				// disable if post action on non tag page, but this is tag/fandom page
 				if ($this.vars.options.post_pages_action == 'notag' && fandomOrTag) {
 					return {post_id: post_id, check: false};
@@ -661,14 +701,18 @@ class JV {
 			get: function() {
 
 				// if quick download enabled - make button
-				if ($this.vars.options.download_status)
-					$('#submenu').append('<span data-action="download" class="big_button" title="Скачать все картинки на странице"></span>');
+				if ($this.vars.options.download_status){
+					$('#submenu')
+						.append('<span data-action="download" class="big_button" title="Скачать все картинки на странице"></span>');
+					$('div.secondary-menu > div > div > div:has(> a[href^="/"][href*="/new"])') // селектор выглядит как говно, но ничего лучше я не придумал :(
+						.prepend('<a href="#" data-action="download"><button type="button" class="ant-btn css-il4ovg ant-btn-round ant-btn-link secondary-menu-element">Скачать все картинки из поста</button></a>');
+				}
 
 				// list to check visited
 				const get = [];
 
 				// all posts on page
-				const posts = $('.postContainer');
+				const posts = $('.postContainer, .content-container > .post-card');
 
 				$.each(posts, function() {
 					// get post_id and options to check
@@ -684,14 +728,14 @@ class JV {
 
 					// to check
 					get.push(post.post_id);
-					
+
 					// post is censored?
 					const iscensored = $(this).find('[alt="Copywrite"], [alt="Censorship"]').length;
 					if (iscensored) {
 						$this.lists.unlock.push(post.post_id);
 					}
 				});
-				
+
 				// translucent animation
 				if (posts.length && $this.vars.options.post_action !== 'none' && $this.vars.status && !$this.vars.options.extension_ignore_url.includes($this.url[1])) {
 					$('#content').css('opacity', $this.vars.options.post_opacity);
@@ -868,7 +912,7 @@ class JV {
 					for (var q of item.tags) {
 						if (num < 0)
 							break;
-						
+
 						q.name = encodeURI(q.name.replaceAll(/[\s]/g, '-').replaceAll(/[/.?#]/g, ''));
 						filename.push(q.name);
 						num--;
@@ -886,7 +930,7 @@ class JV {
 						attribute.template = '';
 						attribute.filename = filename;
 
-						switch(attribute.type) {
+						switch (attribute.type) {
 							case 'PICTURE':
 								if (isPost) {
 									if (['GIF', 'WEBM', 'MP4'].includes(attribute.image.type)) {
@@ -923,7 +967,7 @@ class JV {
 				for (const insert of text) {
 					toReplace[insert[0]] = insert[1];
 				}
-				
+
 				// replace attributes in text
 				if (Object.keys(toReplace).length) {
 					for (const [search, id] of Object.entries(toReplace)) {
@@ -955,11 +999,11 @@ class JV {
 
 				const expand = document.createElement('div');
 				expand.classList.add('post_content_expand');
-				
+
 				const textExpand = document.createElement('span');
 				textExpand.textContent = 'Развернуть';
 				expand.appendChild(textExpand);
-				
+
 				return [content, expand, item.text];
 			}
 		}
@@ -980,7 +1024,7 @@ class JV {
 					// this is banned comment
 					if (comment.parent === null)
 						continue;
-					
+
 					// content
 					comment.text = $this.posts.attributes(comment, false)[2];
 
@@ -1030,7 +1074,7 @@ class JV {
 		$.each(content.find('a.prettyPhotoLink, a.video_gif_source'), function() {
 			if (!$(this).attr('href').includes('/post/'))
 				return;
-			
+
 			const image_id = $(this).attr('href').match(/([0-9]+)\.[a-z]+$/)[1];
 			items[image_id] = window.location.protocol+$(this).attr('href');
 		});
